@@ -666,12 +666,13 @@ class HLFConnection extends Connection {
         HLFUtil.securityCheck(securityContext);
 
         // Validate all the arguments.
-        if (!businessNetworkIdentifier) {
-            throw new Error('businessNetworkIdentifier not specified');
-        }
-        if (businessNetworkIdentifier !== this.businessNetworkIdentifier) {
-            throw new Error('businessNetworkIdentifier does not match the business network identifier for this connection');
-        }
+        // TODO  - these checks should not be required here
+        // if (!businessNetworkIdentifier) {
+        //     throw new Error('businessNetworkIdentifier not specified');
+        // }
+        // if (businessNetworkIdentifier !== this.businessNetworkIdentifier) {
+        //     throw new Error('businessNetworkIdentifier does not match the business network identifier for this connection :'+this.businessNetworkIdentifier +'='+ businessNetworkIdentifier+':');
+        // }
 
         // Send an undeploy request which will disable the chaincode.
         return this.invokeChainCode(securityContext, 'undeployBusinessNetwork', [])

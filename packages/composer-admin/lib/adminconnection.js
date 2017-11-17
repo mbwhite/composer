@@ -23,7 +23,7 @@ const FSConnectionProfileStore = require('composer-common').FSConnectionProfileS
 const Logger = require('composer-common').Logger;
 const Util = require('composer-common').Util;
 const uuid = require('uuid');
-
+const IdCard = require('composer-common').IdCard;
 const LOG = Logger.getLog('AdminConnection');
 
 /**
@@ -468,29 +468,12 @@ class AdminConnection {
         const method = '_buildStartTransaction';
         LOG.entry(method, businessNetworkDefinition, startOptions);
 
-        let identityName, identityCertificate;
+        // let identityName, identityCertificate;
         // Get the current identity - we may need it to bind the
         // identity to a network admin participant.
         return Promise.resolve()
             .then(()=>{
-
-                if (!startOptions.card){
-                    LOG.entry(method,'Should be using card based approach');
-                    // todo in the future throw new Error('A card to use for the NetworkAdmin must be given');
-                    return this._getCurrentIdentity();
-                }
-                return startOptions.card.getCredentials();
-
-            })
-            .then((identity) => {
-
-                // Extract the current identity name and certificate.
-                identityName = this.securityContext.getUser();
-                identityCertificate = identity.certificate;
-
-                    // Now serialize the business network archive.
                 return businessNetworkDefinition.toArchive();
-
             })
             .then((businessNetworkArchive) => {
 
@@ -501,23 +484,28 @@ class AdminConnection {
                 const classDeclaration = startTransaction.getClassDeclaration();
                 startTransaction.businessNetworkArchive = businessNetworkArchive.toString('base64');
 
-                // If the user has not supplied any bootstrap transactions, then we need
-                // to add some:
-                // 1) Create a NetworkAdmin participant for the current identity.
-                // 2) Bind the current identity to the new NetworkAdmin participant.
-                if (!startOptions.bootstrapTransactions || startOptions.bootstrapTransactions.length === 0) {
-                    LOG.debug(method, 'No bootstrap transactions specified');
-                    startTransaction.bootstrapTransactions = this._generateBootstrapTransactions(factory, identityName, identityCertificate);
-                    delete startOptions.bootstrapTransactions;
+
+                if (!startOptions.networkAdmins || !startOptions.networkAdmins.length>0){
+                    throw new Error('No network administrators are specified');
+                }
+                let bootstrapTransactions = this._buildNetworkAdminTransactions(businessNetworkDefinition,startOptions.networkAdmins);
+
+                // Merge the start options and bootstrap transactions.
+                if (startOptions.bootstrapTransactions) {
+                    startOptions.bootstrapTransactions = bootstrapTransactions.concat(startOptions.bootstrapTransactions);
+                } else {
+                    startOptions.bootstrapTransactions = bootstrapTransactions;
                 }
 
                 // Otherwise, parse all of the supplied bootstrap transactions.
-                if (startOptions.bootstrapTransactions) {
-                    startTransaction.bootstrapTransactions = startOptions.bootstrapTransactions.map((bootstrapTransactionJSON) => {
-                        return serializer.fromJSON(bootstrapTransactionJSON);
-                    });
-                    delete startOptions.bootstrapTransactions;
-                }
+                // if (startOptions.bootstrapTransactions) {
+                startTransaction.bootstrapTransactions = startOptions.bootstrapTransactions.map((bootstrapTransactionJSON) => {
+                    return serializer.fromJSON(bootstrapTransactionJSON);
+                });
+
+                //
+                delete startOptions.bootstrapTransactions;
+                delete startOptions.networkAdmins;
 
                 // Now handle the rest of the properties in the start options.
                 Object.keys(startOptions).forEach((key) => {
@@ -539,6 +527,72 @@ class AdminConnection {
     }
 
     /**
+     * Build the transactions to create a set of network administrators
+     *
+     * @param {BusinessNetworkDefinition} businessNetworkDefinition usual network definition
+     * @param {Object[]} networkAdmins array of objects that are defining the network admins
+     *                                   [ { name, certificate } , { name, secret }]
+     * @return {Object[]} The bootstrap transactions.
+     */
+    _buildNetworkAdminTransactions(businessNetworkDefinition,networkAdmins){
+        const method = '_buildNetworkAdminTransactions';
+        LOG.entry(method, businessNetworkDefinition, networkAdmins);
+
+        const factory = businessNetworkDefinition.getFactory();
+        const serializer = businessNetworkDefinition.getSerializer();
+
+        // Convert the network administrators into add participant transactions.
+        const addParticipantTransactions = networkAdmins.map((networkAdmin) => {
+            const participant = factory.newResource('org.hyperledger.composer.system', 'NetworkAdmin', networkAdmin.userName);
+            const targetRegistry = factory.newRelationship('org.hyperledger.composer.system', 'ParticipantRegistry', participant.getFullyQualifiedType());
+            const addParticipantTransaction = factory.newTransaction('org.hyperledger.composer.system', 'AddParticipant');
+            Object.assign(addParticipantTransaction, {
+                resources: [ participant ],
+                targetRegistry
+            });
+            LOG.debug(method, 'Created bootstrap transaction to add participant', addParticipantTransaction);
+            return addParticipantTransaction;
+        });
+
+        // Convert the network administrators into issue or bind identity transactions.
+        const identityTransactions = networkAdmins.map((networkAdmin) => {
+
+            // Handle a certificate which requires a bind identity transaction.
+            let identityTransaction;
+            if (networkAdmin.certificate) {
+                identityTransaction = factory.newTransaction('org.hyperledger.composer.system', 'BindIdentity');
+                Object.assign(identityTransaction, {
+                    participant: factory.newRelationship('org.hyperledger.composer.system', 'NetworkAdmin', networkAdmin.userName),
+                    certificate: networkAdmin.certificate
+                });
+                LOG.debug(method, 'Created bootstrap transaction to bind identity', identityTransaction);
+            }
+
+            // Handle an enrollment secret which requires an issue identity transaction.
+            if (networkAdmin.secret) {
+                identityTransaction = factory.newTransaction('org.hyperledger.composer.system', 'IssueIdentity');
+                Object.assign(identityTransaction, {
+                    participant: factory.newRelationship('org.hyperledger.composer.system', 'NetworkAdmin', networkAdmin.userName),
+                    identityName: networkAdmin.userName
+                });
+                LOG.debug(method, 'Created bootstrap transaction to issue identity', identityTransaction);
+            }
+            return identityTransaction;
+
+        });
+
+                // Serialize all of the transactions into a single array.
+        const transactions = addParticipantTransactions.concat(identityTransactions);
+        const json = transactions.map((transaction) => {
+            return serializer.toJSON(transaction);
+        });
+
+        LOG.exit(method, json);
+        return json;
+
+    }
+
+    /**
      * Starts a business network within the runtime previously installed to the Hyperledger Fabric with
      * the same name as the business network to be started. The connection must be connected for this
      * method to succeed.
@@ -555,15 +609,16 @@ class AdminConnection {
      * });
      * @param {BusinessNetworkDefinition} businessNetworkDefinition - The business network to start
      * @param {Object} [startOptions] connector specific start options
-     *                  startOptions.card the card to use for the NetworkAdmin
+    *                  NetworkAdmins:   [ { name, certificate } , { name, secret }]
+     *
      * @return {Promise} A promise that will be fufilled when the business network has been
-     * deployed.
+     * deployed - with a MAP of cards key is name
      */
     start(businessNetworkDefinition, startOptions ) {
         const method = 'start';
         LOG.entry(method, businessNetworkDefinition, startOptions);
         Util.securityCheck(this.securityContext);
-
+        let networkAdmins = startOptions.networkAdmins;
         // Build the start transaction.
         return this._buildStartTransaction(businessNetworkDefinition, startOptions)
             .then((startTransactionJSON) => {
@@ -571,7 +626,33 @@ class AdminConnection {
                 return this.connection.start(this.securityContext, businessNetworkDefinition.getName(), JSON.stringify(startTransactionJSON), startOptions);
             })
             .then(() => {
+                let connectionProfile = this.securityContext.card.getConnectionProfile();
+
+                // loop over the network admins, and put cards for each into
+                // a map, indexed by the userName
+                let createdCards = new Map();
+                networkAdmins.forEach( (networkAdmin) =>{
+
+                    let metadata= {
+                        version : 1,
+                        userName : networkAdmin.userName,
+                        businessNetwork : businessNetworkDefinition.getName(),
+                        roles: ['ChannelAdmin']
+                    };
+
+                    let newCard;
+                    if (networkAdmin.secret){
+                        metadata.enrollmentSecret = networkAdmin.secret;
+                        newCard = new IdCard(metadata,connectionProfile);
+                    } else {
+                        newCard = new IdCard(metadata,connectionProfile);
+                        newCard.setCredentials({ certificate : networkAdmin.certificate });
+                    }
+                    createdCards.set(networkAdmin.userName,newCard);
+
+                });
                 LOG.exit(method);
+                return createdCards;
             });
     }
 
@@ -597,6 +678,7 @@ class AdminConnection {
      */
     deploy(businessNetworkDefinition, deployOptions ) {
         const method = 'deploy';
+
         LOG.entry(method, businessNetworkDefinition, deployOptions);
         Util.securityCheck(this.securityContext);
 
