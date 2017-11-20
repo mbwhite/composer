@@ -94,6 +94,7 @@ describe('AdminConnection', () => {
         adminConnection = new AdminConnection(adminConnectionOptions);
         adminConnection.securityContext = mockSecurityContext;
         mockAdminIdCard = sinon.createStubInstance(IdCard);
+        mockAdminIdCard.getConnectionProfile.returns({name:'profile',type:'test'});
         mockSecurityContext.card = mockAdminIdCard;
         sinon.stub(adminConnection.connectionProfileManager, 'connect').resolves(mockConnection);
         sinon.stub(adminConnection.connectionProfileManager, 'getConnectionManager').resolves(mockConnectionManager);
@@ -184,7 +185,7 @@ describe('AdminConnection', () => {
         });
     });
 
-    describe('#connectWithCard', () =>{
+    describe('#connect', () =>{
         let cardStub;
 
         beforeEach(() => {
@@ -324,12 +325,26 @@ describe('AdminConnection', () => {
             adminConnection.securityContext = mockSecurityContext;
             let businessNetworkDefinition = new BusinessNetworkDefinition('name@1.0.0');
             sinon.stub(adminConnection, '_buildStartTransaction').resolves({ start: 'json' });
-            return adminConnection.start(businessNetworkDefinition, {card: mockAdminIdCard})
+            return adminConnection.start(businessNetworkDefinition, { networkAdmins: [ {userName : 'admin', secret:'adminpw'} ] })
             .then(() => {
                 sinon.assert.calledOnce(adminConnection._buildStartTransaction);
-                sinon.assert.calledWith(adminConnection._buildStartTransaction, businessNetworkDefinition, {card: mockAdminIdCard});
+                sinon.assert.calledWith(adminConnection._buildStartTransaction, businessNetworkDefinition, {  networkAdmins: [ {userName : 'admin', secret:'adminpw'} ] });
                 sinon.assert.calledOnce(mockConnection.start);
-                sinon.assert.calledWith(mockConnection.start, mockSecurityContext, 'name', '{"start":"json"}', {card: mockAdminIdCard});
+                sinon.assert.calledWith(mockConnection.start, mockSecurityContext, 'name', '{"start":"json"}',  { networkAdmins: [ {userName : 'admin', secret:'adminpw'} ] });
+            });
+        });
+
+        it('should be able to start a business network definition with several networkAdmins required', () => {
+            adminConnection.connection = mockConnection;
+            adminConnection.securityContext = mockSecurityContext;
+            let businessNetworkDefinition = new BusinessNetworkDefinition('name@1.0.0');
+            sinon.stub(adminConnection, '_buildStartTransaction').resolves({ start: 'json' });
+            return adminConnection.start(businessNetworkDefinition, { networkAdmins: [ {userName : 'admin', secret:'adminpw'} , {userName : 'admin', certificate:'cert'}] })
+            .then(() => {
+                sinon.assert.calledOnce(adminConnection._buildStartTransaction);
+                sinon.assert.calledWith(adminConnection._buildStartTransaction, businessNetworkDefinition, {  networkAdmins: [ {userName : 'admin', secret:'adminpw'}, {userName : 'admin', certificate:'cert'} ] });
+                sinon.assert.calledOnce(mockConnection.start);
+                sinon.assert.calledWith(mockConnection.start, mockSecurityContext, 'name', '{"start":"json"}',  { networkAdmins: [ {userName : 'admin', secret:'adminpw'}, {userName : 'admin', certificate:'cert'} ] });
             });
         });
 
@@ -338,12 +353,12 @@ describe('AdminConnection', () => {
             adminConnection.securityContext = mockSecurityContext;
             let businessNetworkDefinition = new BusinessNetworkDefinition('name@1.0.0');
             sinon.stub(adminConnection, '_buildStartTransaction').resolves({ start: 'json' });
-            return adminConnection.start(businessNetworkDefinition, {card: mockAdminIdCard,opt: 1})
+            return adminConnection.start(businessNetworkDefinition,  { opt:1, networkAdmins: [ {userName : 'admin', secret:'adminpw'} ] })
             .then(() => {
                 sinon.assert.calledOnce(adminConnection._buildStartTransaction);
-                sinon.assert.calledWith(adminConnection._buildStartTransaction, businessNetworkDefinition, {card: mockAdminIdCard,opt: 1});
+                sinon.assert.calledWith(adminConnection._buildStartTransaction, businessNetworkDefinition,  { opt:1, networkAdmins: [ {userName : 'admin', secret:'adminpw'} ] });
                 sinon.assert.calledOnce(mockConnection.start);
-                sinon.assert.calledWith(mockConnection.start, mockSecurityContext, 'name', '{"start":"json"}', {card: mockAdminIdCard, opt: 1});
+                sinon.assert.calledWith(mockConnection.start, mockSecurityContext, 'name', '{"start":"json"}',  { opt:1, networkAdmins: [ {userName : 'admin', secret:'adminpw'} ] });
             });
         });
 
@@ -746,8 +761,13 @@ describe('AdminConnection', () => {
             sandbox.stub(uuid, 'v4').returns('47bc3a67-5599-4460-9745-6a291df4f879');
         });
 
+        it('should not build the start transaction if no network admins', () => {
+            return adminConnection._buildStartTransaction(businessNetworkDefinition, { bootstrapTransactions: []  })
+                .should.be.rejectedWith(/No network administrators are specified/);
+        });
+
         it('should build the start transaction if no bootstrap transactions specified', () => {
-            return adminConnection._buildStartTransaction(businessNetworkDefinition)
+            return adminConnection._buildStartTransaction(businessNetworkDefinition, { networkAdmins: [ {userName : 'admin', secret:'adminpw'} ,  {userName : 'adminc', certificate:'certcertcert'}] })
                 .then((startTransactionJSON) => {
                     startTransactionJSON.should.deep.equal({
                         $class: 'org.hyperledger.composer.system.StartBusinessNetwork',
@@ -765,9 +785,29 @@ describe('AdminConnection', () => {
                                 transactionId: '47bc3a67-5599-4460-9745-6a291df4f879'
                             },
                             {
-                                $class: 'org.hyperledger.composer.system.BindIdentity',
-                                certificate: 'such cert',
+                                $class: 'org.hyperledger.composer.system.AddParticipant',
+                                resources: [
+                                    {
+                                        $class: 'org.hyperledger.composer.system.NetworkAdmin',
+                                        participantId: 'adminc'
+                                    }
+                                ],
+                                targetRegistry: 'resource:org.hyperledger.composer.system.ParticipantRegistry#org.hyperledger.composer.system.NetworkAdmin',
+                                timestamp: '1970-01-01T00:00:00.000Z',
+                                transactionId: '47bc3a67-5599-4460-9745-6a291df4f879'
+                            },
+                            {
+                                $class: 'org.hyperledger.composer.system.IssueIdentity',
+                                identityName : 'admin',
                                 participant: 'resource:org.hyperledger.composer.system.NetworkAdmin#admin',
+                                timestamp: '1970-01-01T00:00:00.000Z',
+                                transactionId: '47bc3a67-5599-4460-9745-6a291df4f879'
+                            }
+                            ,
+                            {
+                                $class: 'org.hyperledger.composer.system.BindIdentity',
+                                certificate: 'certcertcert',
+                                participant: 'resource:org.hyperledger.composer.system.NetworkAdmin#adminc',
                                 timestamp: '1970-01-01T00:00:00.000Z',
                                 transactionId: '47bc3a67-5599-4460-9745-6a291df4f879'
                             }
@@ -780,7 +820,7 @@ describe('AdminConnection', () => {
         });
 
         it('should build the start transaction if empty bootstrap transactions specified', () => {
-            return adminConnection._buildStartTransaction(businessNetworkDefinition, { bootstrapTransactions: [] })
+            return adminConnection._buildStartTransaction(businessNetworkDefinition, { bootstrapTransactions: [], networkAdmins: [ {userName : 'admin', secret:'adminpw'} ]  })
                 .then((startTransactionJSON) => {
                     startTransactionJSON.should.deep.equal({
                         $class: 'org.hyperledger.composer.system.StartBusinessNetwork',
@@ -798,8 +838,8 @@ describe('AdminConnection', () => {
                                 transactionId: '47bc3a67-5599-4460-9745-6a291df4f879'
                             },
                             {
-                                $class: 'org.hyperledger.composer.system.BindIdentity',
-                                certificate: 'such cert',
+                                $class: 'org.hyperledger.composer.system.IssueIdentity',
+                                identityName : 'admin',
                                 participant: 'resource:org.hyperledger.composer.system.NetworkAdmin#admin',
                                 timestamp: '1970-01-01T00:00:00.000Z',
                                 transactionId: '47bc3a67-5599-4460-9745-6a291df4f879'
@@ -822,7 +862,7 @@ describe('AdminConnection', () => {
             connection.name='connectionName';
             let userCard = new IdCard(userMetadata, connection);
             userCard.setCredentials({certificate: 'card cert', privateKey: 'String' });
-            const startOptions = { logLevel: 'DEBUG' , card : userCard };
+            const startOptions = { logLevel: 'DEBUG' , card : userCard , networkAdmins: [ {userName : 'admin', secret:'adminpw'} ]  };
             return adminConnection._buildStartTransaction(businessNetworkDefinition, startOptions)
                 .then((startTransactionJSON) => {
                     startTransactionJSON.should.deep.equal({
@@ -841,8 +881,8 @@ describe('AdminConnection', () => {
                                 transactionId: '47bc3a67-5599-4460-9745-6a291df4f879'
                             },
                             {
-                                $class: 'org.hyperledger.composer.system.BindIdentity',
-                                certificate: 'card cert',
+                                $class: 'org.hyperledger.composer.system.IssueIdentity',
+                                identityName : 'admin',
                                 participant: 'resource:org.hyperledger.composer.system.NetworkAdmin#admin',
                                 timestamp: '1970-01-01T00:00:00.000Z',
                                 transactionId: '47bc3a67-5599-4460-9745-6a291df4f879'
@@ -858,7 +898,7 @@ describe('AdminConnection', () => {
         });
 
         it('should build the start transaction ignoring additional unmodelled properties from the start options', () => {
-            const startOptions = { notAModelledProp: 'lulz' };
+            const startOptions = { notAModelledProp: 'lulz', networkAdmins: [ {userName : 'admin', secret:'adminpw'} ]   };
             return adminConnection._buildStartTransaction(businessNetworkDefinition, startOptions)
                 .then((startTransactionJSON) => {
                     startTransactionJSON.should.deep.equal({
@@ -877,8 +917,8 @@ describe('AdminConnection', () => {
                                 transactionId: '47bc3a67-5599-4460-9745-6a291df4f879'
                             },
                             {
-                                $class: 'org.hyperledger.composer.system.BindIdentity',
-                                certificate: 'such cert',
+                                $class: 'org.hyperledger.composer.system.IssueIdentity',
+                                identityName : 'admin',
                                 participant: 'resource:org.hyperledger.composer.system.NetworkAdmin#admin',
                                 timestamp: '1970-01-01T00:00:00.000Z',
                                 transactionId: '47bc3a67-5599-4460-9745-6a291df4f879'
@@ -899,6 +939,7 @@ describe('AdminConnection', () => {
                     resources: [
                         {
                             $class: 'org.hyperledger.composer.system.NetworkAdmin',
+
                             participantId: 'dave'
                         }
                     ],
@@ -914,14 +955,53 @@ describe('AdminConnection', () => {
                     transactionId: '82b350a3-ecac-44e1-849a-24ff2cfa7db7'
                 }
             ];
-            return adminConnection._buildStartTransaction(businessNetworkDefinition, { bootstrapTransactions })
+            return adminConnection._buildStartTransaction(businessNetworkDefinition, { bootstrapTransactions , networkAdmins: [ {userName : 'admin', secret:'adminpw'} ]  })
                 .then((startTransactionJSON) => {
                     startTransactionJSON.should.deep.equal({
-                        $class: 'org.hyperledger.composer.system.StartBusinessNetwork',
-                        bootstrapTransactions,
-                        businessNetworkArchive: 'UEsDBAoAAAAAAAAAIex5auUHJwAAACcAAAAMAAAAcGFja2FnZS5qc29ueyJuYW1lIjoibXktbmV0d29yayIsInZlcnNpb24iOiIxLjAuMCJ9UEsDBAoAAAAAAAAAIewAAAAAAAAAAAAAAAAHAAAAbW9kZWxzL1BLAwQKAAAAAAAAACHsAAAAAAAAAAAAAAAABAAAAGxpYi9QSwECFAAKAAAAAAAAACHseWrlBycAAAAnAAAADAAAAAAAAAAAAAAAAAAAAAAAcGFja2FnZS5qc29uUEsBAhQACgAAAAAAAAAh7AAAAAAAAAAAAAAAAAcAAAAAAAAAAAAQAAAAUQAAAG1vZGVscy9QSwECFAAKAAAAAAAAACHsAAAAAAAAAAAAAAAABAAAAAAAAAAAABAAAAB2AAAAbGliL1BLBQYAAAAAAwADAKEAAACYAAAAAAA=',
-                        timestamp: '1970-01-01T00:00:00.000Z',
-                        transactionId: '47bc3a67-5599-4460-9745-6a291df4f879'
+                        '$class': 'org.hyperledger.composer.system.StartBusinessNetwork',
+                        'businessNetworkArchive': 'UEsDBAoAAAAAAAAAIex5auUHJwAAACcAAAAMAAAAcGFja2FnZS5qc29ueyJuYW1lIjoibXktbmV0d29yayIsInZlcnNpb24iOiIxLjAuMCJ9UEsDBAoAAAAAAAAAIewAAAAAAAAAAAAAAAAHAAAAbW9kZWxzL1BLAwQKAAAAAAAAACHsAAAAAAAAAAAAAAAABAAAAGxpYi9QSwECFAAKAAAAAAAAACHseWrlBycAAAAnAAAADAAAAAAAAAAAAAAAAAAAAAAAcGFja2FnZS5qc29uUEsBAhQACgAAAAAAAAAh7AAAAAAAAAAAAAAAAAcAAAAAAAAAAAAQAAAAUQAAAG1vZGVscy9QSwECFAAKAAAAAAAAACHsAAAAAAAAAAAAAAAABAAAAAAAAAAAABAAAAB2AAAAbGliL1BLBQYAAAAAAwADAKEAAACYAAAAAAA=',
+                        'bootstrapTransactions': [
+                            {
+                                '$class': 'org.hyperledger.composer.system.AddParticipant',
+                                'resources': [
+                                    {
+                                        '$class': 'org.hyperledger.composer.system.NetworkAdmin',
+                                        'participantId': 'admin'
+                                    }
+                                ],
+                                'targetRegistry': 'resource:org.hyperledger.composer.system.ParticipantRegistry#org.hyperledger.composer.system.NetworkAdmin',
+                                'transactionId': '47bc3a67-5599-4460-9745-6a291df4f879',
+                                'timestamp': '1970-01-01T00:00:00.000Z'
+                            },
+                            {
+                                '$class': 'org.hyperledger.composer.system.IssueIdentity',
+                                'participant': 'resource:org.hyperledger.composer.system.NetworkAdmin#admin',
+                                'identityName': 'admin',
+                                'transactionId': '47bc3a67-5599-4460-9745-6a291df4f879',
+                                'timestamp': '1970-01-01T00:00:00.000Z'
+                            },
+                            {
+                                '$class': 'org.hyperledger.composer.system.AddParticipant',
+                                'resources': [
+                                    {
+                                        '$class': 'org.hyperledger.composer.system.NetworkAdmin',
+                                        'participantId': 'dave'
+                                    }
+                                ],
+                                'targetRegistry': 'resource:org.hyperledger.composer.system.ParticipantRegistry#org.hyperledger.composer.system.NetworkAdmin',
+                                'transactionId': '82b350a3-ecac-44e1-849a-24ff2cfa7db7',
+                                'timestamp': '1970-01-01T00:00:00.000Z'
+                            },
+                            {
+                                '$class': 'org.hyperledger.composer.system.BindIdentity',
+                                'participant': 'resource:org.hyperledger.composer.system.NetworkAdmin#dave',
+                                'certificate': 'daves cert',
+                                'transactionId': '82b350a3-ecac-44e1-849a-24ff2cfa7db7',
+                                'timestamp': '1970-01-01T00:00:00.000Z'
+                            }
+                        ],
+                        'transactionId': '47bc3a67-5599-4460-9745-6a291df4f879',
+                        'timestamp': '1970-01-01T00:00:00.000Z'
                     });
                 });
         });

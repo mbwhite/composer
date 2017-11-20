@@ -42,9 +42,6 @@ if (typeof(results.thePromise) !== 'undefined'){
         process.exit(0);
     }).catch((error) => {
         console.log(error+chalk.red('\nCommand failed\n'));
-        //if (argv.debug) {
-        	console.log(error.stack ? error.stack : '<no stack trace>');
-        //}
         process.exit(1);
     });
 } else {

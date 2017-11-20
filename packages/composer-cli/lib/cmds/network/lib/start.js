@@ -86,15 +86,21 @@ class Start {
 
             spinner = ora('Starting business network definition. This may take a minute...').start();
                 // Start the business network.
+
             return adminConnection.start(businessNetworkDefinition, startOptions);
         }).then((result) => {
             let promises = [];
             for (let card of result.values()){
                 // does the card have it's own business network
                 // check the networkAdmins for matching name and return the file
-                let fileName = networkAdmins.find( (e)=>{
+                let fileName;
+                let adminMatch = networkAdmins.find( (e)=>{
                     return (e.userName === card.getUserName());
-                }).file;
+                });
+
+                if (adminMatch){
+                    fileName = adminMatch.file;
+                }
 
                 if (!fileName){
                     let bnn = card.getBusinessNetworkName();

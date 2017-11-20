@@ -18,10 +18,7 @@ const Admin = require('composer-admin');
 const BusinessNetworkDefinition = Admin.BusinessNetworkDefinition;
 const chalk = require('chalk');
 const cmdUtil = require('../../utils/cmdutils');
-const fs = require('fs');
 const ora = require('ora');
-const Pretty = require('prettyjson');
-const Export = require('../../card/lib/export');
 
 /**
  * <p>
@@ -50,8 +47,9 @@ class Update {
             .then(() => {
                 cmdUtil.log(chalk.blue.bold('Updating business network from archive: ')+argv.archiveFile);
                 let archiveFileContents = null;
-                    // Read archive file contents
-                archiveFileContents = Update.getArchiveFileContents(argv.archiveFile);
+
+                // Read archive file contents
+                archiveFileContents = cmdUtil.getArchiveFileContents(argv.archiveFile);
                 return BusinessNetworkDefinition.fromArchive(archiveFileContents);
             })
             .then ((result) => {
@@ -82,20 +80,7 @@ class Update {
             });
     }
 
-        /**
-      * Get contents from archive file
-      * @param {string} archiveFile connection profile name
-      * @return {String} archiveFileContents archive file contents
-      */
-    static getArchiveFileContents(archiveFile) {
-        let archiveFileContents;
-        if (fs.existsSync(archiveFile)) {
-            archiveFileContents = fs.readFileSync(archiveFile);
-        } else {
-            throw new Error('Archive file '+archiveFile+' does not exist.');
-        }
-        return archiveFileContents;
-    }
+
 }
 
 module.exports = Update;

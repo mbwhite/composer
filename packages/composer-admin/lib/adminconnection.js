@@ -398,6 +398,7 @@ class AdminConnection {
      * @param {Object} installOptions connector specific install options
      * @return {Promise} A promise that will be fufilled when the business network has been
      * deployed.
+     *
      */
     install(businessNetworkIdentifier, installOptions) {
         return Promise.resolve().then(()=>{
@@ -464,7 +465,7 @@ class AdminConnection {
      * @param {Object} [startOptions.card] The card to be used as the NetworkAdmin
      * @return {Promise} A promise that will be fufilled with the JSON for the start transaction.
      */
-    _buildStartTransaction(businessNetworkDefinition, startOptions = {}) {
+    _buildStartTransaction(businessNetworkDefinition, startOptions) {
         const method = '_buildStartTransaction';
         LOG.entry(method, businessNetworkDefinition, startOptions);
 
@@ -533,6 +534,7 @@ class AdminConnection {
      * @param {Object[]} networkAdmins array of objects that are defining the network admins
      *                                   [ { name, certificate } , { name, secret }]
      * @return {Object[]} The bootstrap transactions.
+     * @private
      */
     _buildNetworkAdminTransactions(businessNetworkDefinition,networkAdmins){
         const method = '_buildNetworkAdminTransactions';
@@ -586,7 +588,7 @@ class AdminConnection {
         const json = transactions.map((transaction) => {
             return serializer.toJSON(transaction);
         });
-
+        LOG.debug(method, 'Bootstrap transactions',JSON.stringify(json));
         LOG.exit(method, json);
         return json;
 
@@ -675,6 +677,7 @@ class AdminConnection {
      *                deployOptions.card the card to use for the NetworkAdmin
      * @return {Promise} A promise that will be fufilled when the business network has been
      * deployed.
+     * @deprecated Please install() and start()
      */
     deploy(businessNetworkDefinition, deployOptions ) {
         const method = 'deploy';
