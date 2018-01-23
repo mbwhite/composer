@@ -64,6 +64,8 @@ describe('composer start network CLI unit tests', function () {
         sandbox.stub(CmdUtil, 'createAdminConnection').returns(mockAdminConnection);
         sandbox.stub(process, 'exit');
 
+        sandbox.stub(fs, 'writeFileSync');
+
         return businessNetworkDefinition.toArchive()
             .then((archive) => {
                 testBusinessNetworkArchive = archive;
@@ -108,7 +110,7 @@ describe('composer start network CLI unit tests', function () {
                 sinon.assert.calledOnce(BusinessNetworkDefinition.fromArchive);
                 sinon.assert.calledWith(BusinessNetworkDefinition.fromArchive, testBusinessNetworkArchive);
                 sinon.assert.calledOnce(CmdUtil.createAdminConnection);
-
+                sinon.assert.calledTwice(fs.writeFileSync);
                 sinon.assert.calledOnce(mockAdminConnection.connect);
                 sinon.assert.calledWith(mockAdminConnection.connect, 'cardname');
                 sinon.assert.calledOnce(mockAdminConnection.start);
@@ -135,7 +137,7 @@ describe('composer start network CLI unit tests', function () {
                 sinon.assert.calledOnce(BusinessNetworkDefinition.fromArchive);
                 sinon.assert.calledWith(BusinessNetworkDefinition.fromArchive, testBusinessNetworkArchive);
                 sinon.assert.calledOnce(CmdUtil.createAdminConnection);
-
+                sinon.assert.calledTwice(fs.writeFileSync);
                 sinon.assert.calledOnce(mockAdminConnection.connect);
                 sinon.assert.calledWith(mockAdminConnection.connect, 'cardname');
                 sinon.assert.calledOnce(mockAdminConnection.start);
@@ -165,7 +167,7 @@ describe('composer start network CLI unit tests', function () {
                 sinon.assert.calledOnce(BusinessNetworkDefinition.fromArchive);
                 sinon.assert.calledWith(BusinessNetworkDefinition.fromArchive, testBusinessNetworkArchive);
                 sinon.assert.calledOnce(CmdUtil.createAdminConnection);
-
+                sinon.assert.calledTwice(fs.writeFileSync);
                 sinon.assert.calledOnce(mockAdminConnection.connect);
                 sinon.assert.calledWith(mockAdminConnection.connect,'cardname');
                 sinon.assert.calledOnce(mockAdminConnection.start);
@@ -194,7 +196,7 @@ describe('composer start network CLI unit tests', function () {
                 sinon.assert.calledOnce(BusinessNetworkDefinition.fromArchive);
                 sinon.assert.calledWith(BusinessNetworkDefinition.fromArchive, testBusinessNetworkArchive);
                 sinon.assert.calledOnce(CmdUtil.createAdminConnection);
-
+                sinon.assert.calledTwice(fs.writeFileSync);
                 sinon.assert.calledOnce(mockAdminConnection.connect);
                 sinon.assert.calledWith(mockAdminConnection.connect, 'cardname');
                 sinon.assert.calledOnce(mockAdminConnection.start);
@@ -220,7 +222,7 @@ describe('composer start network CLI unit tests', function () {
                             sinon.assert.calledOnce(BusinessNetworkDefinition.fromArchive);
                             sinon.assert.calledWith(BusinessNetworkDefinition.fromArchive, testBusinessNetworkArchive);
                             sinon.assert.calledOnce(CmdUtil.createAdminConnection);
-
+                            sinon.assert.calledTwice(fs.writeFileSync);
                             sinon.assert.calledOnce(mockAdminConnection.connect);
                             sinon.assert.calledWith(mockAdminConnection.connect, 'cardname');
                             sinon.assert.calledOnce(mockAdminConnection.start);
@@ -246,7 +248,7 @@ describe('composer start network CLI unit tests', function () {
                             sinon.assert.calledOnce(BusinessNetworkDefinition.fromArchive);
                             sinon.assert.calledWith(BusinessNetworkDefinition.fromArchive, testBusinessNetworkArchive);
                             sinon.assert.calledOnce(CmdUtil.createAdminConnection);
-
+                            sinon.assert.calledTwice(fs.writeFileSync);
                             sinon.assert.calledOnce(mockAdminConnection.connect);
                             sinon.assert.calledWith(mockAdminConnection.connect, 'cardname');
                             sinon.assert.calledOnce(mockAdminConnection.start);
@@ -273,7 +275,7 @@ describe('composer start network CLI unit tests', function () {
                 sinon.assert.calledOnce(BusinessNetworkDefinition.fromArchive);
                 sinon.assert.calledWith(BusinessNetworkDefinition.fromArchive, testBusinessNetworkArchive);
                 sinon.assert.calledOnce(CmdUtil.createAdminConnection);
-
+                sinon.assert.calledTwice(fs.writeFileSync);
                 sinon.assert.calledOnce(mockAdminConnection.connect);
                 sinon.assert.calledWith(mockAdminConnection.connect, 'cardname');
                 sinon.assert.calledOnce(mockAdminConnection.start);
@@ -298,7 +300,7 @@ describe('composer start network CLI unit tests', function () {
                 sinon.assert.calledOnce(BusinessNetworkDefinition.fromArchive);
                 sinon.assert.calledWith(BusinessNetworkDefinition.fromArchive, testBusinessNetworkArchive);
                 sinon.assert.calledOnce(CmdUtil.createAdminConnection);
-
+                sinon.assert.calledTwice(fs.writeFileSync);
                 sinon.assert.calledOnce(mockAdminConnection.connect);
                 sinon.assert.calledWith(mockAdminConnection.connect,'cardname');
                 sinon.assert.calledOnce(mockAdminConnection.start);
@@ -333,7 +335,7 @@ describe('composer start network CLI unit tests', function () {
                 sinon.assert.calledOnce(BusinessNetworkDefinition.fromArchive);
                 sinon.assert.calledWith(BusinessNetworkDefinition.fromArchive, testBusinessNetworkArchive);
                 sinon.assert.calledOnce(CmdUtil.createAdminConnection);
-
+                sinon.assert.calledTwice(fs.writeFileSync);
                 sinon.assert.calledOnce(mockAdminConnection.connect);
                 sinon.assert.calledWith(mockAdminConnection.connect, 'cardname');
                 sinon.assert.calledOnce(mockAdminConnection.start);
@@ -370,7 +372,7 @@ describe('composer start network CLI unit tests', function () {
                 sinon.assert.calledOnce(BusinessNetworkDefinition.fromArchive);
                 sinon.assert.calledWith(BusinessNetworkDefinition.fromArchive, testBusinessNetworkArchive);
                 sinon.assert.calledOnce(CmdUtil.createAdminConnection);
-
+                sinon.assert.calledTwice(fs.writeFileSync);
                 sinon.assert.calledOnce(mockAdminConnection.connect);
                 sinon.assert.calledWith(mockAdminConnection.connect, 'cardname');
                 sinon.assert.calledOnce(mockAdminConnection.start);
@@ -439,7 +441,7 @@ describe('composer start network CLI unit tests', function () {
                             sinon.assert.calledOnce(BusinessNetworkDefinition.fromArchive);
                             sinon.assert.calledWith(BusinessNetworkDefinition.fromArchive, testBusinessNetworkArchive);
                             sinon.assert.calledOnce(CmdUtil.createAdminConnection);
-
+                            sinon.assert.calledTwice(fs.writeFileSync);
                             sinon.assert.calledOnce(mockAdminConnection.connect);
                             sinon.assert.calledWith(mockAdminConnection.connect, 'cardname');
                             sinon.assert.calledOnce(mockAdminConnection.start);
