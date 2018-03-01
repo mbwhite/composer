@@ -37,6 +37,7 @@ describe('NetworkCardStoreManager', function() {
 
         sandbox = sinon.sandbox.create();
         loadModuleSpy = sandbox.spy(LoadModule,'loadModule');
+
     });
 
     afterEach(() => {
@@ -48,6 +49,14 @@ describe('NetworkCardStoreManager', function() {
     describe('#getCardStore', function() {
         it('should correctly load the config module and the default object', () => {
 
+            let store = NetworkCardStoreManager.getCardStore();
+            store.should.be.an.instanceOf(StoreProxy);
+            sinon.assert.calledOnce(loadModuleSpy);
+            sinon.assert.calledWith(loadModuleSpy,'composer-wallet-filesystem',sinon.match.any);
+        });
+
+        it('should correctly load the config module and the default object', () => {
+            sandbox.stub(ConfigMediator,'get').returns({ 'type': 'composer-wallet-filesystem' ,'anotherwayofgiving':'options'});
             let store = NetworkCardStoreManager.getCardStore();
             store.should.be.an.instanceOf(StoreProxy);
             sinon.assert.calledOnce(loadModuleSpy);
