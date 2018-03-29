@@ -246,7 +246,7 @@ class TestUtil {
 
                     // Create all necessary configuration for Hyperledger Fabric v1.0.
                 } else if (TestUtil.isHyperledgerFabricV1()) {
-                    let cardStore = NetworkCardStoreManager.getCardStore( );
+                    let cardStore = NetworkCardStoreManager.getCardStore();
                     adminConnection = new AdminConnection({cardStore});
                     cardStoreForDeploy = cardStore;
 

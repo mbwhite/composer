@@ -85,7 +85,7 @@ class AdminConnection {
         const connectionProfileData = card.getConnectionProfile();
         connectionProfileData.cardName = name;
         const connectionManager = await this.connectionProfileManager.getConnectionManagerByType(connectionProfileData['x-type']);
-        const exists = this.cardStore.has(name);
+        const exists = await this.cardStore.has(name);
         if (exists) {
             await connectionManager.removeIdentity(connectionProfileData.name, connectionProfileData, card.getUserName());
         }
@@ -174,7 +174,7 @@ class AdminConnection {
      * @returns {Promise} Resolves with true if the card with the name exists, resolved with false if not
      */
     hasCard (name) {
-        return this.cardStore.has(name);
+        return  this.cardStore.has(name);
     }
 
     /**

@@ -21,6 +21,8 @@ const WalletBackedStore = require('./walletbackedcardstore');
 const LoadModule = require('../module/loadModule');
 const path=require('path');
 
+const LOG = require('../log/logger').getLog('cardstore/NetworkCardStoreManager');
+
 const moduleCache = {};
 /**
  * Provides the loading mechanism for handling card stores.
@@ -42,6 +44,9 @@ class NetworkCardStoreManager {
      * @return {BusinessNetworkCardStore} instance of a BusinessNetworkCardStore to use
      */
     static getCardStore(options = { 'type': 'composer-wallet-filesystem' }) {
+        const METHOD='getCardStore';
+        LOG.entry(METHOD,options);
+
         let cardStoreCfg = cfg.get('wallet',options );
         if (cardStoreCfg.type.match(/composer-wallet/)){
             // the relative path here is to ensure that in a flat structure eg dev build the module can be found
@@ -55,6 +60,7 @@ class NetworkCardStoreManager {
                 moduleCache[cardStoreCfg.type] = StoreModule;
             }
             if (!StoreModule){
+                LOG.error(METHOD,`Unable to load requested module ${cardStoreCfg.type}`);
                 throw new Error(`Unable to load requested module ${cardStoreCfg.type}`);
             }
             if (StoreModule.getStore){
@@ -62,12 +68,15 @@ class NetworkCardStoreManager {
                 opts.StoreModule = StoreModule;
                 cardStore = new WalletBackedStore(opts);
             }else {
+                LOG.error(METHOD,`Module loaded does not have correct interface ${cardStoreCfg.type}`);
                 throw new Error(`Module loaded does not have correct interface ${cardStoreCfg.type}`);
             }
         } else {
+            LOG.error(METHOD,`Module give does not have valid name ${cardStoreCfg.type}`);
             throw new Error(`Module give does not have valid name ${cardStoreCfg.type}`);
         }
 
+        LOG.exit(METHOD,'returning created card store');
         return cardStore;
 
     }

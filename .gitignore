@@ -64,3 +64,7 @@ packages/composer-playground/e2e/downloads/
 
 package-lock.json
 packages/composer-tests-functional/storage
+
+
+# Ignore the npm packed runtime code produced in fv tests
+packages/**/*.tgz

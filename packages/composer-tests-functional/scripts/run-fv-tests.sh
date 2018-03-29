@@ -123,6 +123,10 @@ for FVTEST in $(echo ${FVTEST} | tr "," " "); do
         fi
     fi
 
+    (docker rm -f composer-wallet-redis || true) && \
+       docker run -p 6379:6379 --name composer-wallet-redis -d redis  && \
+       docker exec composer-wallet-redis redis-cli -c flushall
+
     # Start all test programs.
     npm run stop_http
     npm run start_http
@@ -138,6 +142,8 @@ for FVTEST in $(echo ${FVTEST} | tr "," " "); do
         ARCH=$ARCH docker-compose -f ${DOCKER_FILE} kill
         ARCH=$ARCH docker-compose -f ${DOCKER_FILE} down
     fi
+
+    docker rm -f composer-wallet-redis || true
 
     # Delete any written configuration.
     rm -fr ${HOME}/.composer
