@@ -63,7 +63,9 @@
     "sanitize-filename": "1.6.1",
     "tar": "4.3.0",
     "valid-url": "1.0.9",
-    "yargs": "10.0.3"
+    "yargs": "10.0.3",
+    "dependency-graph": "^0.7.0"
+    
   },
   "license-check-and-add-config": {
     "folder": ".",
