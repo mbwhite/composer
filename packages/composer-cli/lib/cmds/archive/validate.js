@@ -22,12 +22,11 @@ module.exports.describe = 'validate a Business Network Archive for migration';
 module.exports.builder = function (yargs){
 
     yargs.options({
-        'from' : {alias: 'f', required: true, describe: 'BNA Archive filename migrating FROM', type: 'string' },
-        'to'  : {alias: 't', required: true, describe:'BNA Archive file migrating TO',type:'string'},
+        'from': {alias: 'f', required: true, describe: 'BNA Archive filename migrating FROM', type: 'string' },
+        'to': {alias: 't', required: true, describe:'BNA Archive file migrating TO', type:'string' },
     });
-    yargs.usage('composer archive validate --from digitialPropertyNetwork-one.bna --from digitialPropertyNetwork-two.bna');
+    yargs.usage('composer archive validate --from digitalPropertyNetwork-one.bna --to digitialPropertyNetwork-two.bna');
 
-    
     return yargs;
 };
 
