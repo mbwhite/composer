@@ -24,13 +24,14 @@ const EventEmitter = require('events');
 const chalk = require('chalk');
 
 /**
- *   /**
- * https://hyperledger.github.io/composer/latest//reference/model-compatibility
+ * composer archive validate command
+ * https://hyperledger.github.io/composer/latest/reference/model-compatibility
+ * @private
  */
 class MigrationChecker extends EventEmitter {
 
     /**
-     * @param {Object} args command line arguements
+     * @param {Object} args command line arguments
      */
     constructor(args) {
         super();
@@ -46,7 +47,7 @@ class MigrationChecker extends EventEmitter {
     }
 
     /**
-     *
+     * Creates a DAG (directed acyclic graph) to represent declaration hierarchy of a model file
      */
     async loadNetworks() {
 
@@ -104,7 +105,7 @@ class MigrationChecker extends EventEmitter {
     /**
      *
      */
-    async  runRules() {
+    async runRules() {
 
         const globalClassRules = require('./rule.js').globalClassRules;
         const perClassRules = require('./rule.js').perClassRules;
@@ -138,7 +139,6 @@ class MigrationChecker extends EventEmitter {
     /**
       * Command process for deploy command
       * @param {string} args argument list from composer command
-
       * @return {Promise} promise when command complete
       */
     static handler(args) {
@@ -177,14 +177,6 @@ class MigrationChecker extends EventEmitter {
               }
           });
 
-    }
-
-    /**
-     *
-     * @param {Array} value array to check
-     */
-    static cardinality(value,str){
-        return (value.length===1 ? '' : str);
     }
 }
 

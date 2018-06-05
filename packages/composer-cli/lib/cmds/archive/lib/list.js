@@ -43,7 +43,6 @@ class ListBNA {
             cmdUtil.log('Version:'+businessNetwork.getVersion());
 
             return;
-
         });
     }
 

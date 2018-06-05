@@ -114,10 +114,10 @@ module.exports.perClassRules = {
         let fromProps = from.getProperties();
         let toProps = to.getProperties();
 
-        let fromPropsNames = fromProps.map((e) => { return e.getName() })
-        let toPropsNames = toProps.map((e)=>{return e.getName();});
+        let fromPropsNames = fromProps.map((e) => { return e.getName(); });
+        let toPropsNames = toProps.map((e) => { return e.getName(); });
         let sameProps = _.intersection(fromPropsNames, toPropsNames);
-        
+
         for (const propName of sameProps) {
             let propFrom = from.getProperty(propName);
             let propTo = to.getProperty(propName);
@@ -130,7 +130,7 @@ module.exports.perClassRules = {
                     result: 'success'
                 });
             } else {
-                events.push( { 
+                events.push({
                     data: { fqn: propFrom.getFullyQualifiedName(), changeFrom: propFromType, changeTo: propToType },
                     result: 'warning'
                 });
@@ -146,8 +146,8 @@ module.exports.perClassRules = {
         let fromProps = from.getProperties();
         let toProps = to.getProperties();
 
-        let fromPropsNames = fromProps.map((e) => { return e.getName() })
-        let toPropsNames = toProps.map((e)=>{return e.getName();});
+        let fromPropsNames = fromProps.map((e) => { return e.getName(); });
+        let toPropsNames = toProps.map((e) => { return e.getName(); });
         let sameProps = _.intersection(fromPropsNames, toPropsNames);
 
         for (const propName of sameProps) {
@@ -161,7 +161,7 @@ module.exports.perClassRules = {
                 }
                 const toValidator = propTo.validator.validator;
 
-                events.push( { 
+                events.push({
                     data: { fqn: propFrom.getFullyQualifiedName(), originalValidator: fromValidator, newValidator: toValidator },
                     result: (fromValidator === toValidator) ? 'success': 'warning'
                 });
@@ -177,7 +177,7 @@ module.exports.perClassRules = {
         const fromSuper = from.getSuperTypeDeclaration();
         const toSuper = to.getSuperTypeDeclaration();
         const superTypesLength = to.getAllSuperTypeDeclarations().length;
-   
+
         // If class has 2 or more super types, changing its direct parent may alter relationship with grandparent
         if (superTypesLength > 1 && fromSuper.ast.classExtension) {
             const fromParentExtension = fromSuper.ast.classExtension.class.name;
