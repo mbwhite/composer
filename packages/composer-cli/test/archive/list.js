@@ -49,7 +49,7 @@ describe('composer archive list unit tests', function () {
         mockBusinessNetworkDefinition.toArchive.resolves('bytearray');
 
         sandbox.stub(BusinessNetworkDefinition, 'fromArchive').resolves(mockBusinessNetworkDefinition);
-        // sandbox.stub(BusinessNetworkDefinition, 'toArchive').resolves('bytearray');
+        sandbox.stub(BusinessNetworkDefinition, 'toArchive').resolves('bytearray');
         sandbox.stub(CmdUtil, 'createAdminConnection').returns(mockAdminConnection);
         sandbox.stub(fs,'readFileSync' );
         sandbox.stub(process, 'exit');

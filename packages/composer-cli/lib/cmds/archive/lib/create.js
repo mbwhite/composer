@@ -59,7 +59,7 @@ class Create {
             try {
                 moduleIndexjs = this.loadModule(moduleName);
             } catch (err) {
-                console.log(err);
+
                 if (err.code === 'MODULE_NOT_FOUND') {
                     let localName = process.cwd() + '/node_modules/' + moduleName;
                     cmdUtil.log(chalk.bold.yellow('Not found in main node_module search path, trying current directory'));
